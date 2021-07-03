@@ -22,11 +22,7 @@ impl WordPair {
 }
 // TODO lessons system
 fn main() { // TODO save and load data from file
-    let mut store:Vec<WordPair> = vec![
-        WordPair::new("cat", "кот"),
-        WordPair::new("dog", "пес"),
-        WordPair::new("ace", "лед"),
-    ];
+    let mut store = load_store().unwrap();
     let mut data: Vec<WordPair> = vec![];
     let mut ra : usize = 0;
 
@@ -41,11 +37,12 @@ fn main() { // TODO save and load data from file
     let mut word = Input::new(10, 10, 200, 40, ""); // TODO add grid and tab
     let mut translated = Input::new(10, 70, 200, 40, "");
     let mut add_btn = Button::new(10, 130, 80, 40, "Create");
-    let mut init_tst = Button::new(10, 190, 80, 40, "Init Test");
+    let mut init_test = Button::new(10, 190, 80, 40, "Init Test");
 
     let mut ask_frame = Frame::new(240, 10, 200, 40, "");
     let mut answer_input = Input::new(300, 70, 200, 40, "");
     let mut answer_btn = Button::new(300, 130, 80, 40, "Answer");
+    answer_btn.deactivate();
     // TODO show list of words and list of lessons
 
     let (s, r) = app::channel::<Cmd>();
@@ -54,7 +51,7 @@ fn main() { // TODO save and load data from file
 
     add_btn.set_callback( move |_| s.send(Cmd::Add));
     answer_btn.set_callback(move |_| s.send(Cmd::Answer));
-    init_tst.set_callback(move |_| s.send(Cmd::InitTest));
+    init_test.set_callback(move |_| s.send(Cmd::InitTest));
 
     win.show();
     while app.wait() {
@@ -66,11 +63,13 @@ fn main() { // TODO save and load data from file
                             if let Some(v) = dice(0, data.len()) {
                                 ra = v;
                                 s.send(Cmd::Test);
-                                // TODO init btn disable
+                                init_test.deactivate();
+                                answer_btn.activate();
                             }
                         }
                         Cmd::Add => {
                             store.push(WordPair::new(word.value().as_str(), translated.value().as_str())); // TODO check is empty
+                            write_to_store(&store);
                             word.set_value("");
                             translated.set_value("");
                         }
@@ -81,7 +80,8 @@ fn main() { // TODO save and load data from file
                                 ask_frame.set_label(&current_pair.translated);
                             } else {
                                 ask_frame.set_label("There are no words left");
-                                // TODO answer btn disable
+                                answer_btn.deactivate();
+                                init_test.activate();
                             }
                         }
                         Cmd::Answer => {
@@ -110,4 +110,22 @@ fn dice(from: usize, to: usize) -> Option<usize> {
     }
     Some(rand::thread_rng().gen_range(from..to))
 
+}
+
+fn load_store() -> Option<Vec<WordPair>> {
+    let mut storage = vec![];
+    let data = std::fs::read_to_string("data.db").unwrap();
+    for line in data.lines() {
+        let mut chunks = line.splitn(2,'-');
+        let word = chunks.next().unwrap();
+        let translated = chunks.next().unwrap();
+        storage.push(WordPair::new(word, translated));
+    }
+    Some(storage)
+}
+
+fn write_to_store(data: &Vec<WordPair>) {
+    for word_pair in data {
+        std::fs::write("data.db", format!("{}-{}", word_pair.word, word_pair.translated));
+    }
 }
