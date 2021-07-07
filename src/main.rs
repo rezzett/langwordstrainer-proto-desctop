@@ -1,22 +1,27 @@
 use fltk::{
-    app, button::Button, enums::Color, enums::Key, enums::Shortcut, frame::Frame, group::Group,
+    app, button::Button, enums::Color, enums::Key, enums::Shortcut, frame::Frame, group::Group, group::Pack, group::Scroll,
     group::Tabs, input::Input, prelude::*, window::Window,
 };
 use rand::Rng;
+use uuid::Uuid;
 
-#[derive(Clone, Copy)]
+#[derive(Copy, Clone)]
 enum Cmd {
     Add,
     Test,
     Answer,
     InitTest,
     Hint,
+    Del(Uuid),
 }
+
+
 
 #[derive(Debug, Clone)]
 struct WordPair {
     word: String,
     translated: String,
+    id: Uuid,
 }
 
 impl WordPair {
@@ -25,13 +30,15 @@ impl WordPair {
             WordPair {
                 word: word.to_owned(),
                 translated: translated.to_owned(),
+                id: Uuid::new_v4()
             }
         }
     }
 }
 // TODO lessons system
 fn main() {
-    // TODO save and load data from file
+    let (s, r) = app::channel::<Cmd>();
+
     let mut store = load_store();
     let mut data: Vec<WordPair> = vec![];
     let mut ra: usize = 0;
@@ -49,7 +56,7 @@ fn main() {
 
     let mut add_group = Group::default()
         .with_size(580, 320)
-        .with_label("Add")
+        .with_label("  Add  ")
         .center_of(&tab);
     add_group.set_color(Color::from_hex(0x363636));
     // add controls
@@ -67,17 +74,17 @@ fn main() {
 
     add_group.end();
 
-    let mut test_group = Group::new(10, 40, 540, 340, "Test");
+    let mut test_group = Group::new(10, 40, 580, 320, "  Train  ");
     test_group.set_color(Color::from_hex(0x363636));
 
     // test controls
-    let mut score_frame = Frame::new(10, 50, 580, 60, "");
+    let mut score_frame = Frame::new(10, 50, 580, 40, "");
     let mut init_test = Button::new(50, 150, 80, 40, "Init Test");
-    let mut ask_frame = Frame::new(200, 100, 200, 60, "");
+    let mut ask_frame = Frame::new(10, 100, 580, 40, "");
     let mut answer_input = Input::new(150, 150, 300, 40, "");
     let mut answer_btn = Button::new(200, 200, 80, 40, "Answer");
     let mut hint_btn = Button::new(300, 200, 80, 40, "Hint");
-    let mut hint_frame = Frame::new(250, 250, 100, 50, "");
+    let mut hint_frame = Frame::new(10, 250, 580, 40, "");
 
     // test controls settings
     init_test.set_color(Color::from_hex(0x555500));
@@ -97,6 +104,28 @@ fn main() {
 
     test_group.end();
 
+    let  words_list_group = Group::new(10, 40, 580, 320, "  Words list  ");
+    let mut scroll =  Scroll::new(15,45,560, 300, "");
+    let mut pack = Pack::new(140, 60, 300, 280, "");
+    pack.set_spacing(10);
+    let mut  hide_btn = Button::new(0, 0, 0, 0, "");
+    hide_btn.hide();
+    for item in store.clone() {
+        let mut list_btn = Button::new(130, 100, 220, 40, "");
+        list_btn.set_label(&item.word);
+        list_btn.set_color(Color::from_hex(0x550000));
+        list_btn.set_label_color(Color::from_hex(0xccdfd9));
+        list_btn.set_callback(move |b| {
+            b.hide();
+            s.send(Cmd::Del(item.id));
+        }
+        );
+        pack.add(&list_btn);
+    }
+    pack.end();
+    scroll.end();
+    words_list_group.end();
+
     tab.end();
 
     answer_btn.deactivate();
@@ -107,7 +136,6 @@ fn main() {
 
     // TODO show list of words and list of lessons
 
-    let (s, r) = app::channel::<Cmd>();
 
     win.end();
 
@@ -121,6 +149,17 @@ fn main() {
         match r.recv() {
             Some(command) => {
                 match command {
+                    Cmd::Del(v) => {
+                        let mut new_store = vec![];
+                        for curr in store {
+                            if curr.id != v {
+                                new_store.push(curr);
+                            }
+                        }
+                        store = new_store;
+                        pack.remove_by_index(1);
+                        write_to_store(&store);
+                    }
                     Cmd::InitTest => {
                         data = store.clone();
                         if let Some(v) = dice(0, data.len()) {
@@ -133,10 +172,20 @@ fn main() {
                     }
                     Cmd::Add => {
                         if word.value().len() > 1 && translated.value().len() > 1 {
-                            store.push(WordPair::new(
+                            let new_wp = WordPair::new(
                                 word.value().as_str(),
                                 translated.value().as_str(),
-                            ));
+                            );
+                            store.push(new_wp.clone());
+                            let mut new_btn = Button::new(100, 100, 220, 40, ""); // TODO dry closure
+                            new_btn.set_color(Color::from_hex(0x550000));
+                            new_btn.set_label_color(Color::from_hex(0xccdfd9));
+                            new_btn.set_label(&new_wp.word);
+                            new_btn.set_callback(move |b| {  // refactor this !
+                                b.hide();
+                                s.send(Cmd::Del(new_wp.id));
+                            });
+                            pack.add(&new_btn);
                             write_to_store(&store);
                             word.set_value("");
                             translated.set_value("");
@@ -210,9 +259,12 @@ fn load_store() -> Vec<WordPair> {
         return storage;
     }
     for line in data.lines() {
-        let mut chunks = line.splitn(2, '-');
+        let mut chunks = line.splitn(3, '-');
         let word = chunks.next().unwrap();
         let translated = chunks.next().unwrap();
+        let id = chunks.next().unwrap();
+        let mut wp =  WordPair::new(word, translated);
+        wp.id = Uuid::parse_str(id).unwrap();
         storage.push(WordPair::new(word, translated));
     }
     storage
@@ -225,7 +277,7 @@ fn write_to_store(data: &Vec<WordPair>) {
     }
     let mut content = String::new();
     for word_pair in data {
-        content.push_str(&format!("{}-{}\n", word_pair.word, word_pair.translated));
+        content.push_str(&format!("{}-{}-{}\n", word_pair.word, word_pair.translated, word_pair.id));
     }
     std::fs::write("data.db", content).expect("Failed to write data at write_to_store");
     // !!!
