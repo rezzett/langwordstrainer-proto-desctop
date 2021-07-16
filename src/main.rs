@@ -1,6 +1,6 @@
 use fltk::{
-    app, button::Button, enums::Color, enums::Key, enums::Shortcut, frame::Frame, group::Group, group::Pack, group::Scroll,
-    group::Tabs, input::Input, prelude::*, window::Window,
+    app, button::Button, enums::Color, enums::Key, enums::Shortcut, frame::Frame, group::Group,
+    group::Pack, group::Scroll, group::Tabs, input::Input, prelude::*, window::Window,
 };
 use rand::Rng;
 use uuid::Uuid;
@@ -15,8 +15,6 @@ enum Cmd {
     Del(Uuid),
 }
 
-
-
 #[derive(Debug, Clone)]
 struct WordPair {
     word: String,
@@ -30,7 +28,7 @@ impl WordPair {
             WordPair {
                 word: word.to_owned(),
                 translated: translated.to_owned(),
-                id: Uuid::new_v4()
+                id: Uuid::new_v4(),
             }
         }
     }
@@ -60,6 +58,8 @@ fn main() {
         .center_of(&tab);
     add_group.set_color(Color::from_hex(0x363636));
     // add controls
+    let mut total_lbl = Frame::new(10, 50, 580, 40, "");
+    total_lbl.set_label(&format!("Total: {}", &store.len()));
     let mut word = Input::new(150, 100, 300, 40, "word:");
     let mut translated = Input::new(150, 150, 300, 40, "translated:");
     let mut add_btn = Button::new(260, 200, 80, 40, "Create");
@@ -104,11 +104,11 @@ fn main() {
 
     test_group.end();
 
-    let  words_list_group = Group::new(10, 40, 580, 320, "  Words list  ");
-    let mut scroll =  Scroll::new(15,45,560, 300, "");
+    let words_list_group = Group::new(10, 40, 580, 320, "  Words list  ");
+    let _scroll = Scroll::new(15, 45, 560, 300, "");
     let mut pack = Pack::new(140, 60, 300, 280, "");
     pack.set_spacing(10);
-    let mut  hide_btn = Button::new(0, 0, 0, 0, "");
+    let mut hide_btn = Button::new(0, 0, 0, 0, "");
     hide_btn.hide();
     for item in store.clone() {
         let mut list_btn = Button::new(130, 100, 220, 40, "");
@@ -118,12 +118,11 @@ fn main() {
         list_btn.set_callback(move |b| {
             b.hide();
             s.send(Cmd::Del(item.id));
-        }
-        );
+        });
         pack.add(&list_btn);
     }
     pack.end();
-    scroll.end();
+    _scroll.end();
     words_list_group.end();
 
     tab.end();
@@ -135,7 +134,6 @@ fn main() {
     }
 
     // TODO show list of words and list of lessons
-
 
     win.end();
 
@@ -159,6 +157,7 @@ fn main() {
                         store = new_store;
                         pack.remove_by_index(1);
                         write_to_store(&store);
+                        total_lbl.set_label(&format!("Total: {}", &store.len()));
                     }
                     Cmd::InitTest => {
                         data = store.clone();
@@ -172,16 +171,16 @@ fn main() {
                     }
                     Cmd::Add => {
                         if word.value().len() > 1 && translated.value().len() > 1 {
-                            let new_wp = WordPair::new(
-                                word.value().as_str(),
-                                translated.value().as_str(),
-                            );
+                            let new_wp =
+                                WordPair::new(word.value().as_str(), translated.value().as_str());
                             store.push(new_wp.clone());
+                            total_lbl.set_label(&format!("Total: {}", &store.len()));
                             let mut new_btn = Button::new(100, 100, 220, 40, ""); // TODO dry closure
                             new_btn.set_color(Color::from_hex(0x550000));
                             new_btn.set_label_color(Color::from_hex(0xccdfd9));
                             new_btn.set_label(&new_wp.word);
-                            new_btn.set_callback(move |b| {  // refactor this !
+                            new_btn.set_callback(move |b| {
+                                // refactor this !
                                 b.hide();
                                 s.send(Cmd::Del(new_wp.id));
                             });
@@ -259,11 +258,17 @@ fn load_store() -> Vec<WordPair> {
         return storage;
     }
     for line in data.lines() {
-        let mut chunks = line.splitn(3, '-');
-        let word = chunks.next().unwrap();
-        let translated = chunks.next().unwrap();
-        let id = chunks.next().unwrap();
-        let mut wp =  WordPair::new(word, translated);
+        let mut chunks = line.splitn(3, '|');
+        let word = chunks
+            .next()
+            .expect("Failed to get splited data 'world' at App::load_store");
+        let translated = chunks
+            .next()
+            .expect("Failed to splited data 'translated' at App::load_store");
+        let id = chunks
+            .next()
+            .expect("Failed to splited data 'id' at App::load_store");
+        let mut wp = WordPair::new(word, translated);
         wp.id = Uuid::parse_str(id).unwrap();
         storage.push(WordPair::new(word, translated));
     }
@@ -277,8 +282,10 @@ fn write_to_store(data: &Vec<WordPair>) {
     }
     let mut content = String::new();
     for word_pair in data {
-        content.push_str(&format!("{}-{}-{}\n", word_pair.word, word_pair.translated, word_pair.id));
+        content.push_str(&format!(
+            "{}|{}|{}\n",
+            word_pair.word, word_pair.translated, word_pair.id
+        ));
     }
     std::fs::write("data.db", content).expect("Failed to write data at write_to_store");
-    // !!!
 }
