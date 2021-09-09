@@ -1,6 +1,6 @@
 use fltk::{
     app, button::Button, enums::Color, enums::Key, enums::Shortcut, frame::Frame, group::Group,
-    group::Pack, group::Scroll, group::Tabs, input::Input, prelude::*, window::Window,
+    group::Pack, group::Scroll, group::Tabs, input::Input, prelude::*, prelude::*, window::Window,
 };
 use rand::Rng;
 use uuid::Uuid;
@@ -77,10 +77,16 @@ fn main() {
     // add controls settings
     word.set_color(Color::from_hex(0x282828));
     word.set_text_color(Color::from_hex(0xffffff));
+    word.set_text_size(20);
     translated.set_color(Color::from_hex(0x282828));
     translated.set_text_color(Color::from_hex(0xffffff));
+    translated.set_text_size(20);
     add_btn.set_color(Color::from_hex(0xe14b00));
     add_btn.set_label_color(Color::from_hex(0xffffff));
+    add_btn.set_label_size(18);
+    // NEED TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    add_btn.set_shortcut(Shortcut::from_key(Key::Enter));
+    add_btn.set_tooltip("  Enter  ");
 
     add_group.end();
 
@@ -91,6 +97,7 @@ fn main() {
     let mut word_count_frame = Frame::new(0, 30, APP_WIDTH, 40, "");
     let mut score_frame = Frame::new(0, 70, APP_WIDTH, 40, "");
     let mut ask_frame = Frame::new(0, 110, APP_WIDTH, 40, "");
+    ask_frame.set_label_size(20);
     let mut answer_input = Input::new(10, 150, APP_WIDTH - 20, 60, "");
     let mut init_test = Button::new(80, 230, 240, 60, "Start");
     let mut answer_btn = Button::new(80, 310, 240, 60, "Answer");
@@ -110,18 +117,27 @@ fn main() {
     word_count_frame.set_label(&format!("Words: {}/{}", data.len(), store.len()));
     init_test.set_color(Color::from_hex(0x7f00be));
     init_test.set_label_color(Color::from_hex(0xffffff));
+    init_test.set_label_size(18);
+    init_test.set_shortcut(Shortcut::from_key(Key::ShiftR));
+    init_test.set_tooltip("   ShiftR   ");
     ask_frame.set_color(Color::from_hex(0x282828));
     ask_frame.set_label_color(Color::from_hex(0xffffff));
     answer_input.set_color(Color::from_hex(0x282828));
     answer_input.set_text_color(Color::from_hex(0xffffff));
+    answer_input.set_text_size(20);
     hint_frame.set_color(Color::from_hex(0x282828));
     hint_frame.set_label_color(Color::from_hex(0xffffff));
 
     hint_btn.set_color(Color::from_hex(0x00aa00));
     hint_btn.set_label_color(Color::from_hex(0xffffff));
+    hint_btn.set_label_size(18);
+    hint_btn.set_shortcut(Shortcut::from_key(Key::ControlR));
+    hint_btn.set_tooltip("   ControlR   ");
     answer_btn.set_color(Color::from_hex(0x55557f));
     answer_btn.set_label_color(Color::from_hex(0xffffff));
+    answer_btn.set_label_size(18);
     answer_btn.set_shortcut(Shortcut::from_key(Key::Enter));
+    answer_btn.set_tooltip("   Enter   ");
 
     test_group.end();
 
@@ -248,6 +264,7 @@ fn main() {
                         let current_pair = &data[ra];
                         hint_frame.set_label(&current_pair.word);
                         hint_count_frame.set_label(&format!("Hints usage: {}", hint_count));
+                        app::set_focus(&answer_input);
                     }
                     Cmd::Answer => {
                         let current_pair = &data[ra];
