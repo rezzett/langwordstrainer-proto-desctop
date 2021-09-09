@@ -5,6 +5,12 @@ use fltk::{
 use rand::Rng;
 use uuid::Uuid;
 
+// constants
+// TODO make mod
+const APP_WIDTH: i32 = 400;
+const APP_HEIGHT: i32 = 600;
+const TAB_BAR_HEIGHT: i32 = 60;
+
 #[derive(Copy, Clone)]
 enum Cmd {
     Add,
@@ -45,51 +51,53 @@ fn main() {
     let app = app::App::default().with_scheme(app::AppScheme::Gtk);
     app::background(0x36, 0x39, 0x36);
     let mut win = Window::default()
-        .with_size(600, 400)
+        .with_size(APP_WIDTH, APP_HEIGHT)
         .center_screen()
-        .with_label("word-trainer v0.1.2");
+        .with_label("word-trainer v0.1.3");
     win.set_color(Color::from_hex(0x363636));
 
-    let mut tab = Tabs::new(10, 10, 580, 380, "");
+    let mut tab = Tabs::new(0, 0, APP_WIDTH, APP_HEIGHT, "");
     tab.set_color(Color::Blue);
 
-    let mut add_group = Group::default()
-        .with_size(580, 320)
+    let add_group = Group::default()
+        .with_size(APP_WIDTH, APP_HEIGHT - TAB_BAR_HEIGHT)
         .with_label("  Add  ")
         .center_of(&tab);
-    add_group.set_color(Color::from_hex(0x363636));
+    //add_group.set_color(Color::from_hex(0x363636));
     // add controls
-    let mut total_lbl = Frame::new(10, 50, 580, 40, "");
+    let mut total_lbl = Frame::new(0, 30, APP_WIDTH, 40, "");
     total_lbl.set_label(&format!("Total: {}", &store.len()));
-    let mut word = Input::new(150, 100, 300, 40, "word:");
-    let mut translated = Input::new(150, 150, 300, 40, "translated:");
-    let mut add_btn = Button::new(260, 200, 80, 40, "Create");
+    let _input_word_lbl = Frame::new(0, 80, APP_WIDTH, 40, "Word:");
+    let mut word = Input::new(10, 120, APP_WIDTH - 20, 60, "");
+    let _input_translated_lbl = Frame::new(0, 180, APP_WIDTH, 40, "Translated:");
+    let mut translated = Input::new(10, 220, APP_WIDTH - 20, 60, "");
+    let mut add_btn = Button::new(80, 320, 240, 60, "Create");
 
     // add controls settings
     word.set_color(Color::from_hex(0x282828));
     word.set_text_color(Color::from_hex(0xffffff));
     translated.set_color(Color::from_hex(0x282828));
     translated.set_text_color(Color::from_hex(0xffffff));
-    add_btn.set_color(Color::from_hex(0x555500));
+    add_btn.set_color(Color::from_hex(0xe14b00));
     add_btn.set_label_color(Color::from_hex(0xffffff));
 
     add_group.end();
 
-    let mut test_group = Group::new(10, 40, 580, 320, "  Train  ");
+    let mut test_group = Group::new(10, 40, APP_WIDTH, APP_HEIGHT - TAB_BAR_HEIGHT, "  Train  ");
     test_group.set_color(Color::from_hex(0x363636));
 
     // test controls
-    let mut score_frame = Frame::new(10, 50, 290, 40, "");
-    let mut hint_count_frame = Frame::new(290, 50, 290, 40, "Hints usage: 0");
-    let mut init_test = Button::new(50, 150, 80, 40, "Start");
-    let mut ask_frame = Frame::new(10, 100, 580, 40, "");
-    let mut answer_input = Input::new(150, 150, 300, 40, "");
-    let mut answer_btn = Button::new(200, 200, 80, 40, "Answer");
-    let mut hint_btn = Button::new(300, 200, 80, 40, "Hint");
-    let mut hint_frame = Frame::new(10, 250, 580, 40, "");
+    let mut score_frame = Frame::new(0, 30, APP_WIDTH, 40, "");
+    let mut hint_count_frame = Frame::new(0, 70, APP_WIDTH, 40, "Hints usage: 0");
+    let mut ask_frame = Frame::new(0, 110, APP_WIDTH, 40, "");
+    let mut answer_input = Input::new(10, 150, APP_WIDTH - 20, 60, "");
+    let mut init_test = Button::new(80, 230, 240, 60, "Start");
+    let mut answer_btn = Button::new(80, 310, 240, 60, "Answer");
+    let mut hint_btn = Button::new(80, 390, 240, 60, "Hint");
+    let mut hint_frame = Frame::new(0, 470, APP_WIDTH, 40, "");
 
     // test controls settings
-    init_test.set_color(Color::from_hex(0x555500));
+    init_test.set_color(Color::from_hex(0x7f00be));
     init_test.set_label_color(Color::from_hex(0xffffff));
     ask_frame.set_color(Color::from_hex(0x282828));
     ask_frame.set_label_color(Color::from_hex(0xffffff));
@@ -101,22 +109,28 @@ fn main() {
 
     hint_btn.set_color(Color::from_hex(0x00aa00));
     hint_btn.set_label_color(Color::from_hex(0xffffff));
-    answer_btn.set_color(Color::from_hex(0x555500));
+    answer_btn.set_color(Color::from_hex(0x55557f));
     answer_btn.set_label_color(Color::from_hex(0xffffff));
     answer_btn.set_shortcut(Shortcut::from_key(Key::Enter));
 
     test_group.end();
 
-    let words_list_group = Group::new(10, 40, 580, 320, "  Words list  ");
-    let _scroll = Scroll::new(15, 45, 560, 300, "");
-    let mut pack = Pack::new(140, 60, 300, 280, "");
-    pack.set_spacing(10);
+    let words_list_group = Group::new(
+        10,
+        40,
+        APP_WIDTH,
+        APP_HEIGHT - TAB_BAR_HEIGHT,
+        "  Words list  ",
+    );
+    let _scroll = Scroll::new(10, 40, APP_WIDTH - 20, APP_HEIGHT - TAB_BAR_HEIGHT, "");
+    let mut pack = Pack::new(50, 40, APP_WIDTH - 120, APP_HEIGHT - 40, "");
+    pack.set_spacing(5);
     let mut hide_btn = Button::new(0, 0, 0, 0, "");
     hide_btn.hide();
     for item in store.clone() {
-        let mut list_btn = Button::new(130, 100, 220, 40, "");
+        let mut list_btn = Button::new(0, 100, 220, 40, "");
         list_btn.set_label(&item.word);
-        list_btn.set_color(Color::from_hex(0x550000));
+        list_btn.set_color(Color::from_hex(0x29213b));
         list_btn.set_label_color(Color::from_hex(0xccdfd9));
         list_btn.set_callback(move |b| {
             b.hide();
@@ -181,7 +195,7 @@ fn main() {
                             store.push(new_wp.clone());
                             total_lbl.set_label(&format!("Total: {}", &store.len()));
                             let mut new_btn = Button::new(100, 100, 220, 40, ""); // TODO dry closure
-                            new_btn.set_color(Color::from_hex(0x550000));
+                            new_btn.set_color(Color::from_hex(0x29213b));
                             new_btn.set_label_color(Color::from_hex(0xccdfd9));
                             new_btn.set_label(&new_wp.word);
                             new_btn.set_callback(move |b| {
@@ -220,7 +234,8 @@ fn main() {
                     }
                     Cmd::Answer => {
                         let current_pair = &data[ra];
-                        dbg!(&answer_input.value(), &current_pair.word);
+                        // DEBUG
+                        //dbg!(&answer_input.value(), &current_pair.word);
                         if answer_input.value() == current_pair.word {
                             data.remove(ra); // TODO progress or smtg ??
                             answer_input.set_value("");
