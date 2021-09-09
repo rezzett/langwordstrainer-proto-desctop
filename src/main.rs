@@ -40,6 +40,7 @@ fn main() {
     let mut store = load_store();
     let mut data: Vec<WordPair> = vec![];
     let mut ra: usize = 0;
+    let mut hint_count = 0;
 
     let app = app::App::default().with_scheme(app::AppScheme::Gtk);
     app::background(0x36, 0x39, 0x36);
@@ -78,8 +79,9 @@ fn main() {
     test_group.set_color(Color::from_hex(0x363636));
 
     // test controls
-    let mut score_frame = Frame::new(10, 50, 580, 40, "");
-    let mut init_test = Button::new(50, 150, 80, 40, "Init Test");
+    let mut score_frame = Frame::new(10, 50, 290, 40, "");
+    let mut hint_count_frame = Frame::new(290, 50, 290, 40, "Hints usage: 0");
+    let mut init_test = Button::new(50, 150, 80, 40, "Start");
     let mut ask_frame = Frame::new(10, 100, 580, 40, "");
     let mut answer_input = Input::new(150, 150, 300, 40, "");
     let mut answer_btn = Button::new(200, 200, 80, 40, "Answer");
@@ -95,6 +97,7 @@ fn main() {
     answer_input.set_text_color(Color::from_hex(0xffffff));
     hint_frame.set_color(Color::from_hex(0x282828));
     hint_frame.set_label_color(Color::from_hex(0xffffff));
+    hint_count_frame.set_label_color(Color::from_hex(0xff0000));
 
     hint_btn.set_color(Color::from_hex(0x00aa00));
     hint_btn.set_label_color(Color::from_hex(0xffffff));
@@ -160,6 +163,8 @@ fn main() {
                         total_lbl.set_label(&format!("Total: {}", &store.len()));
                     }
                     Cmd::InitTest => {
+                        hint_count = 0;
+                        hint_count_frame.set_label(&format!("Hints usage: {}", hint_count));
                         data = store.clone();
                         if let Some(v) = dice(0, data.len()) {
                             ra = v;
@@ -208,8 +213,10 @@ fn main() {
                         }
                     }
                     Cmd::Hint => {
+                        hint_count += 1;
                         let current_pair = &data[ra];
                         hint_frame.set_label(&current_pair.word);
+                        hint_count_frame.set_label(&format!("Hints usage: {}", hint_count));
                     }
                     Cmd::Answer => {
                         let current_pair = &data[ra];
