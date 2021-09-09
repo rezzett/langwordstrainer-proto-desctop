@@ -47,6 +47,7 @@ fn main() {
     let mut data: Vec<WordPair> = vec![];
     let mut ra: usize = 0;
     let mut hint_count = 0;
+    let mut fail_count = 0;
 
     let app = app::App::default().with_scheme(app::AppScheme::Gtk);
     app::background(0x36, 0x39, 0x36);
@@ -87,8 +88,8 @@ fn main() {
     test_group.set_color(Color::from_hex(0x363636));
 
     // test controls
-    let mut score_frame = Frame::new(0, 30, APP_WIDTH, 40, "");
-    let mut hint_count_frame = Frame::new(0, 70, APP_WIDTH, 40, "Hints usage: 0");
+    let mut word_count_frame = Frame::new(0, 30, APP_WIDTH, 40, "");
+    let mut score_frame = Frame::new(0, 70, APP_WIDTH, 40, "");
     let mut ask_frame = Frame::new(0, 110, APP_WIDTH, 40, "");
     let mut answer_input = Input::new(10, 150, APP_WIDTH - 20, 60, "");
     let mut init_test = Button::new(80, 230, 240, 60, "Start");
@@ -96,7 +97,17 @@ fn main() {
     let mut hint_btn = Button::new(80, 390, 240, 60, "Hint");
     let mut hint_frame = Frame::new(0, 470, APP_WIDTH, 40, "");
 
+    let mut fail_frame = Frame::new(0, APP_HEIGHT - 40, APP_WIDTH / 2, 40, "Failed: 0");
+    let mut hint_count_frame = Frame::new(
+        APP_WIDTH / 2,
+        APP_HEIGHT - 40,
+        APP_WIDTH / 2,
+        40,
+        "Hints usage: 0",
+    );
+
     // test controls settings
+    word_count_frame.set_label(&format!("Words: {}/{}", data.len(), store.len()));
     init_test.set_color(Color::from_hex(0x7f00be));
     init_test.set_label_color(Color::from_hex(0xffffff));
     ask_frame.set_color(Color::from_hex(0x282828));
@@ -105,7 +116,6 @@ fn main() {
     answer_input.set_text_color(Color::from_hex(0xffffff));
     hint_frame.set_color(Color::from_hex(0x282828));
     hint_frame.set_label_color(Color::from_hex(0xffffff));
-    hint_count_frame.set_label_color(Color::from_hex(0xff0000));
 
     hint_btn.set_color(Color::from_hex(0x00aa00));
     hint_btn.set_label_color(Color::from_hex(0xffffff));
@@ -178,8 +188,15 @@ fn main() {
                     }
                     Cmd::InitTest => {
                         hint_count = 0;
+                        fail_count = 0;
                         hint_count_frame.set_label(&format!("Hints usage: {}", hint_count));
+                        fail_frame.set_label(&format!("Failed: {}", fail_count));
                         data = store.clone();
+                        word_count_frame.set_label(&format!(
+                            "Words: {}/{}",
+                            data.len(),
+                            store.len()
+                        ));
                         if let Some(v) = dice(0, data.len()) {
                             ra = v;
                             s.send(Cmd::Test);
@@ -218,7 +235,7 @@ fn main() {
                             ask_frame.set_label(&current_pair.translated);
                             app::set_focus(&answer_input);
                         } else {
-                            ask_frame.set_label("There are no words left");
+                            ask_frame.set_label("There are no words left.");
                             answer_btn.deactivate();
                             hint_btn.deactivate();
                             init_test.activate();
@@ -240,21 +257,21 @@ fn main() {
                             data.remove(ra); // TODO progress or smtg ??
                             answer_input.set_value("");
                             score_frame.set_label_color(Color::from_hex(0xaeee00));
-                            score_frame.set_label(&format!(
-                                "Good! {} word of {} left",
-                                data.len(),
-                                store.len()
-                            ));
+                            score_frame.set_label("GOOD!");
                         } else {
                             // TODO score & score label (or progress????)
+                            fail_count += 1;
+                            fail_frame.set_label(&format!("Failed: {}", fail_count));
                             answer_input.set_value("");
                             score_frame.set_label_color(Color::from_hex(0xff0000));
-                            score_frame.set_label(&format!(
-                                "Bad! {} word of {} left",
-                                data.len(),
-                                store.len()
-                            ));
+                            score_frame.set_label("WRONG!");
                         }
+
+                        word_count_frame.set_label(&format!(
+                            "Words: {}/{}",
+                            data.len(),
+                            store.len()
+                        ));
                         app::set_focus(&answer_input);
                         s.send(Cmd::Test);
                     }
