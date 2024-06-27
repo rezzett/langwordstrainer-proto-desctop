@@ -11,6 +11,7 @@ use fltk::{
     prelude::*,
     window::Window,
 };
+use fltk_theme::{color_themes, ColorTheme};
 
 mod constants;
 mod entity;
@@ -31,18 +32,17 @@ fn main() {
     let mut hint_count = 0;
     let mut fail_count = 0;
 
+    // APP
     let app = app::App::default().with_scheme(app::AppScheme::Gtk);
-    app::background(0x36, 0x39, 0x36);
+    let _theme = ColorTheme::new(color_themes::BLACK_THEME).apply();
     let mut win = Window::default()
         .with_size(APP_WIDTH, APP_HEIGHT)
         .center_screen()
-        .with_label("word-trainer v0.2.1");
-    win.set_color(Color::from_hex(0x363636));
+        .with_label(" LWT v.0.2.1");
     let win_img = image::SvgImage::from_data(APP_LOGO).ok();
     win.set_icon(win_img);
 
-    let mut tab = Tabs::new(0, 0, APP_WIDTH, APP_HEIGHT, "");
-    tab.set_color(Color::Blue);
+    let tab = Tabs::new(0, 0, APP_WIDTH, APP_HEIGHT, "");
 
     // ADD WORD GROUP
     let add_group = Group::default()
@@ -60,11 +60,9 @@ fn main() {
     let mut add_btn = Button::new(80, 320, 240, 60, "Create");
 
     // add controls settings
-    word.set_color(Color::from_hex(0x282828));
-    word.set_text_color(Color::from_hex(0xffffff));
+    word.set_text_color(Color::from_hex(0x8a8a8a));
     word.set_text_size(20);
-    translated.set_color(Color::from_hex(0x282828));
-    translated.set_text_color(Color::from_hex(0xffffff));
+    translated.set_text_color(Color::from_hex(0x8a8a8a));
     translated.set_text_size(20);
     add_btn.set_color(Color::from_hex(0xe14b00));
     add_btn.set_label_color(Color::from_hex(0xffffff));
@@ -75,8 +73,7 @@ fn main() {
     add_group.end();
 
     // TEST CONTROLS GROUP
-    let mut test_group = Group::new(10, 40, APP_WIDTH, APP_HEIGHT - TAB_BAR_HEIGHT, "  Train  ");
-    test_group.set_color(Color::from_hex(0x363636));
+    let test_group = Group::new(10, 40, APP_WIDTH, APP_HEIGHT - TAB_BAR_HEIGHT, "  Train  ");
 
     let mut word_count_frame = Frame::new(0, 30, APP_WIDTH, 40, "");
     let mut score_frame = Frame::new(0, 70, APP_WIDTH, 40, "");
@@ -106,8 +103,8 @@ fn main() {
     init_test.set_tooltip("   Alt R   ");
     ask_frame.set_color(Color::from_hex(0x282828));
     ask_frame.set_label_color(Color::from_hex(0xffffff));
-    answer_input.set_color(Color::from_hex(0x282828));
-    answer_input.set_text_color(Color::from_hex(0xffffff));
+    // answer_input.set_color(Color::from_hex(0x282828));
+    answer_input.set_text_color(Color::from_hex(0x8a8a8a));
     answer_input.set_text_size(20);
     hint_frame.set_color(Color::from_hex(0x282828));
     hint_frame.set_label_color(Color::from_hex(0xffffff));
@@ -142,7 +139,7 @@ fn main() {
     for item in store.clone() {
         let mut list_btn = Button::new(0, 100, 220, 40, "");
         list_btn.set_label(&item.word);
-        list_btn.set_color(Color::from_hex(0x29213b));
+        list_btn.set_color(Color::from_hex(0x1d7385));
         list_btn.set_label_color(Color::from_hex(0xccdfd9));
         list_btn.set_callback(move |b| {
             b.hide();
@@ -221,7 +218,7 @@ fn main() {
                             store.push(new_wp.clone());
                             total_lbl.set_label(&format!("Total: {}", &store.len()));
                             let mut new_btn = Button::new(100, 100, 220, 40, ""); // TODO dry closure
-                            new_btn.set_color(Color::from_hex(0x29213b));
+                            new_btn.set_color(Color::from_hex(0x1d7385));
                             new_btn.set_label_color(Color::from_hex(0xccdfd9));
                             new_btn.set_label(&new_wp.word);
                             new_btn.set_callback(move |b| {
@@ -265,7 +262,7 @@ fn main() {
                         if answer_input.value() == current_pair.word {
                             data.remove(ra);
                             answer_input.set_value("");
-                            score_frame.set_label_color(Color::from_hex(0xaeee00));
+                            score_frame.set_label_color(Color::from_hex(0x2a7d04));
                             score_frame.set_label("GOOD!");
                         } else {
                             fail_count += 1;
