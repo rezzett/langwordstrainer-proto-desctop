@@ -11,14 +11,14 @@ use fltk::{
     prelude::*,
     window::Window,
 };
-use rand::Rng;
-use uuid::Uuid;
 
 mod constants;
 mod entity;
+mod functions;
 
 use crate::constants::*;
 use crate::entity::*;
+use crate::functions::*;
 
 // TODO lessons system
 
@@ -44,6 +44,7 @@ fn main() {
     let mut tab = Tabs::new(0, 0, APP_WIDTH, APP_HEIGHT, "");
     tab.set_color(Color::Blue);
 
+    // ADD WORD GROUP
     let add_group = Group::default()
         .with_size(APP_WIDTH, APP_HEIGHT - TAB_BAR_HEIGHT)
         .with_label("  Add  ")
@@ -73,10 +74,10 @@ fn main() {
 
     add_group.end();
 
+    // TEST CONTROLS GROUP
     let mut test_group = Group::new(10, 40, APP_WIDTH, APP_HEIGHT - TAB_BAR_HEIGHT, "  Train  ");
     test_group.set_color(Color::from_hex(0x363636));
 
-    // test controls
     let mut word_count_frame = Frame::new(0, 30, APP_WIDTH, 40, "");
     let mut score_frame = Frame::new(0, 70, APP_WIDTH, 40, "");
     let mut ask_frame = Frame::new(0, 110, APP_WIDTH, 40, "");
@@ -163,7 +164,6 @@ fn main() {
     }
 
     // TODO show list of words and list of lessons
-
     win.end();
 
     add_btn.set_callback(move |_| s.send(Cmd::Add));
@@ -262,15 +262,12 @@ fn main() {
                     }
                     Cmd::Answer => {
                         let current_pair = &data[ra];
-                        // DEBUG
-                        //dbg!(&answer_input.value(), &current_pair.word);
                         if answer_input.value() == current_pair.word {
-                            data.remove(ra); // TODO progress or smtg ??
+                            data.remove(ra);
                             answer_input.set_value("");
                             score_frame.set_label_color(Color::from_hex(0xaeee00));
                             score_frame.set_label("GOOD!");
                         } else {
-                            // TODO score & score label (or progress????)
                             fail_count += 1;
                             fail_frame.set_label(&format!("Failed: {}", fail_count));
                             answer_input.set_value("");
@@ -291,51 +288,4 @@ fn main() {
             _ => {}
         }
     }
-}
-
-fn dice(from: usize, to: usize) -> Option<usize> {
-    if to == 0 {
-        return None;
-    }
-    Some(rand::thread_rng().gen_range(from..to))
-}
-
-fn load_store() -> Vec<WordPair> {
-    // TODO error handling with fltk msgbox
-    let mut storage = vec![];
-    let data = std::fs::read_to_string("data.db").unwrap_or(String::new());
-    if data.is_empty() {
-        return storage;
-    }
-    for line in data.lines() {
-        let mut chunks = line.splitn(3, '|');
-        let word = chunks
-            .next()
-            .expect("Failed to get splited data 'world' at App::load_store");
-        let translated = chunks
-            .next()
-            .expect("Failed to splited data 'translated' at App::load_store");
-        let id = chunks
-            .next()
-            .expect("Failed to splited data 'id' at App::load_store");
-        let mut wp = WordPair::new(word, translated);
-        wp.id = Uuid::parse_str(id).unwrap();
-        storage.push(WordPair::new(word, translated));
-    }
-    storage
-}
-
-fn write_to_store(data: &Vec<WordPair>) {
-    // TODO error handling
-    if !std::path::Path::new("data.db").exists() {
-        std::fs::File::create("data.db").expect("Cannot create file at write_to_store");
-    }
-    let mut content = String::new();
-    for word_pair in data {
-        content.push_str(&format!(
-            "{}|{}|{}\n",
-            word_pair.word, word_pair.translated, word_pair.id
-        ));
-    }
-    std::fs::write("data.db", content).expect("Failed to write data at write_to_store");
 }
