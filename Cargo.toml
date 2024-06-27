@@ -1,0 +1,16 @@
+[package]
+name = "base"
+version = "0.1.0"
+authors = ["rezzett <rezzett@mail.ru>"]
+edition = "2018"
+build = "build.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+fltk = "^1"
+rand = "0.8.4"
+uuid = { version = "0.8.2", features = ["v4"] }
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1.12"
