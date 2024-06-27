@@ -1,3 +1,4 @@
+use fltk_theme::{color_themes, ColorTheme};
 use rand::Rng;
 use uuid::Uuid;
 
@@ -48,4 +49,31 @@ pub fn write_to_store(data: &Vec<WordPair>) {
         ));
     }
     std::fs::write("data.db", content).expect("Failed to write data at write_to_store");
+}
+
+pub fn save_settings(data: i32) {
+    // TODO error handling
+    if !std::path::Path::new("settings.ini").exists() {
+        std::fs::File::create("settings.ini").expect("Cannot create file at write_to_store");
+        // TODO
+    }
+    std::fs::write("settings.ini", &format!("{}", data))
+        .expect("Failed to write data at write_to_store"); // TODO
+}
+
+pub fn load_settings() -> bool {
+    if let Ok(theme_id) = std::fs::read_to_string("settings.ini") {
+        if let Ok(id) = theme_id.trim().parse::<i32>() {
+            match id {
+                0 => ColorTheme::new(color_themes::DARK_THEME).apply(),
+                1 => ColorTheme::new(color_themes::BLACK_THEME).apply(),
+                2 => ColorTheme::new(color_themes::GRAY_THEME).apply(),
+                3 => ColorTheme::new(color_themes::SHAKE_THEME).apply(),
+                4 => ColorTheme::new(color_themes::TAN_THEME).apply(),
+                _ => unreachable!(),
+            }
+            return true;
+        };
+    };
+    false
 }

@@ -6,8 +6,9 @@ use fltk::{
     enums::{Color, Key, Shortcut},
     frame::Frame,
     group::{Group, Pack, Scroll, Tabs},
-    image::{self},
+    image,
     input::Input,
+    menu,
     prelude::*,
     window::Window,
 };
@@ -34,7 +35,11 @@ fn main() {
 
     // APP
     let app = app::App::default().with_scheme(app::AppScheme::Gtk);
-    let _theme = ColorTheme::new(color_themes::BLACK_THEME).apply();
+    if !load_settings() {
+        let _theme = ColorTheme::new(color_themes::BLACK_THEME).apply();
+    }
+
+    // WINDOW
     let mut win = Window::default()
         .with_size(APP_WIDTH, APP_HEIGHT)
         .center_screen()
@@ -42,6 +47,7 @@ fn main() {
     let win_img = image::SvgImage::from_data(APP_LOGO).ok();
     win.set_icon(win_img);
 
+    // TAB
     let tab = Tabs::new(0, 0, APP_WIDTH, APP_HEIGHT, "");
 
     // ADD WORD GROUP
@@ -152,6 +158,21 @@ fn main() {
     _scroll.end();
     words_list_group.end();
 
+    // THEME SETTINGS GROUP
+    let theme_goup = Group::default()
+        .with_size(APP_WIDTH, APP_HEIGHT - TAB_BAR_HEIGHT)
+        .with_label(" Themes ")
+        .center_of(&tab);
+
+    let mut theme_lbl_frame = Frame::new(0, 40, APP_WIDTH, 40, "");
+    theme_lbl_frame.set_label("Choose Theme");
+    let mut theme_choice = menu::Choice::default()
+        .with_label("")
+        .with_size(APP_WIDTH - 20, 60)
+        .with_pos(10, 80);
+    theme_choice.add_choice("DARK|BLACK|GRAY|SHAKE|TAN");
+    theme_goup.end();
+
     tab.end();
 
     answer_btn.deactivate();
@@ -163,12 +184,26 @@ fn main() {
     // TODO show list of words and list of lessons
     win.end();
 
+    // CALLBACKS
     add_btn.set_callback(move |_| s.send(Cmd::Add));
     answer_btn.set_callback(move |_| s.send(Cmd::Answer));
     init_test.set_callback(move |_| s.send(Cmd::InitTest));
     hint_btn.set_callback(move |_| s.send(Cmd::Hint));
+    theme_choice.set_callback(|c| {
+        match c.value() {
+            0 => ColorTheme::new(color_themes::DARK_THEME).apply(),
+            1 => ColorTheme::new(color_themes::BLACK_THEME).apply(),
+            2 => ColorTheme::new(color_themes::GRAY_THEME).apply(),
+            3 => ColorTheme::new(color_themes::SHAKE_THEME).apply(),
+            4 => ColorTheme::new(color_themes::TAN_THEME).apply(),
+            _ => unreachable!(),
+        }
+        save_settings(c.value())
+    });
 
     win.show();
+
+    // MAIN LOOP
     while app.wait() {
         match r.recv() {
             Some(command) => {
