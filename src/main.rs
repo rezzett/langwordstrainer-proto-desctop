@@ -26,8 +26,7 @@ use crate::functions::*;
 
 fn main() {
     let (s, r) = app::channel::<Cmd>();
-
-    let mut store = load_store();
+    let mut store = load_store().unwrap_or_default();
     let mut data: Vec<WordPair> = vec![];
     let mut ra: usize = 0;
     let mut hint_count = 0;

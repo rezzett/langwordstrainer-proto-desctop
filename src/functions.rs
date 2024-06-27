@@ -1,3 +1,4 @@
+use fltk::dialog;
 use fltk_theme::{color_themes, ColorTheme};
 use rand::Rng;
 use uuid::Uuid;
@@ -11,35 +12,29 @@ pub fn dice(from: usize, to: usize) -> Option<usize> {
     Some(rand::thread_rng().gen_range(from..to))
 }
 
-pub fn load_store() -> Vec<WordPair> {
-    // TODO error handling with fltk msgbox
+pub fn load_store() -> Option<Vec<WordPair>> {
     let mut storage = vec![];
     let data = std::fs::read_to_string("data.db").unwrap_or(String::new());
     if data.is_empty() {
-        return storage;
+        return Some(storage);
     }
     for line in data.lines() {
         let mut chunks = line.splitn(3, '|');
-        let word = chunks
-            .next()
-            .expect("Failed to get splited data 'world' at App::load_store");
-        let translated = chunks
-            .next()
-            .expect("Failed to splited data 'translated' at App::load_store");
-        let id = chunks
-            .next()
-            .expect("Failed to splited data 'id' at App::load_store");
+        let word = chunks.next()?;
+        let translated = chunks.next()?;
+        let id = chunks.next()?;
         let mut wp = WordPair::new(word, translated);
-        wp.id = Uuid::parse_str(id).unwrap();
+        wp.id = Uuid::parse_str(id).unwrap_or_default();
         storage.push(WordPair::new(word, translated));
     }
-    storage
+    Some(storage)
 }
 
 pub fn write_to_store(data: &Vec<WordPair>) {
-    // TODO error handling
     if !std::path::Path::new("data.db").exists() {
-        std::fs::File::create("data.db").expect("Cannot create file at write_to_store");
+        if !std::fs::File::create("data.db").is_ok() {
+            dialog::alert(100, 100, "Cannot create file at write_to_store");
+        }
     }
     let mut content = String::new();
     for word_pair in data {
@@ -48,17 +43,20 @@ pub fn write_to_store(data: &Vec<WordPair>) {
             word_pair.word, word_pair.translated, word_pair.id
         ));
     }
-    std::fs::write("data.db", content).expect("Failed to write data at write_to_store");
+    if !std::fs::write("data.db", content).is_ok() {
+        dialog::alert(100, 100, "Failed to write data at write_to_store");
+    }
 }
 
 pub fn save_settings(data: i32) {
-    // TODO error handling
     if !std::path::Path::new("settings.ini").exists() {
-        std::fs::File::create("settings.ini").expect("Cannot create file at write_to_store");
-        // TODO
+        if !std::fs::File::create("settings.ini").is_ok() {
+            dialog::alert(100, 100, "Cannot create file to save setting")
+        }
     }
-    std::fs::write("settings.ini", &format!("{}", data))
-        .expect("Failed to write data at write_to_store"); // TODO
+    if !std::fs::write("settings.ini", &format!("{}", data)).is_ok() {
+        dialog::alert(100, 100, "Failed to write data to save settings")
+    }
 }
 
 pub fn load_settings() -> bool {
